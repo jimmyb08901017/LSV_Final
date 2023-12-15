@@ -20,12 +20,13 @@ def BMF(truthtable, k, binary = False):
     best_score = float('inf')
 
     threshold_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-
+    
+    ### ASSO algorithm ###
     for threshold in threshold_list:
-        association = calculate_association(input_truth, threshold)
+        association = calculate_association(input_truth, threshold) # A
         S, B, result = solve_basis(input_truth, k, association, 1, -1, binary)
         if binary:
-            score = weighted_HD(input_truth, result)
+            score = weighted_HD(input_truth, result) # This is the new part proposed in BLASYS 3.2
         else:
             score = HD(input_truth, result)
 
@@ -35,6 +36,8 @@ def BMF(truthtable, k, binary = False):
             best_result = result
             best_score = score
     
+    ### Exhastive search on B ### 
+    # Wait... why not search on S as ASSO proposed?
     # Enumerate possible columns
     column_list = []
     multi_list = []
