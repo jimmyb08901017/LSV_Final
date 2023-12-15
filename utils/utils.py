@@ -15,8 +15,7 @@ class NoValidDesign(Exception):
 
 
 def evaluate_design(k_stream, worker, filename, display=True):
-    if display:
-        print('Evaluating Design:', k_stream)
+    print('>>> Evaluating Design')
     verilog_list = [os.path.join(worker.output, 'partition', worker.modulename + '.v')]
 
     # Parse each subcircuit
@@ -72,11 +71,12 @@ def evaluate_design(k_stream, worker, filename, display=True):
         power = float('nan')
         print('Simulation error: {:.6f}\tCircuit area: {:.6f}'.format(err, area))
 
-
+    print('<<< Evaluating Design:', k_stream)
     return err, area, delay, power
 
 
 def synth_design(input_file, output_file, lib_file, script, yosys):
+    print(">>> synth_design")
 
     if lib_file is not None:
         yosys_command = 'read_verilog ' + input_file + '; ' + 'synth -flatten; opt; opt_clean -purge;  opt; opt_clean -purge; write_verilog -noattr ' +output_file + '.v; abc -liberty '+lib_file + ' -script ' + script + '; stat -liberty '+lib_file + '; write_verilog -noattr ' +output_file + '_syn.v;\n '
@@ -119,6 +119,7 @@ def synth_design(input_file, output_file, lib_file, script, yosys):
                 area = return_list[-1]
 
     os.remove(output_file+'.log')
+    print("<<< synth_design")
     return float(area)
 
 def inpout(fname):
@@ -284,7 +285,7 @@ def create_w(n, k, W, f1, modulename, formula_file, abc):
                 for line in file_handle:
                     if 'assign' in line:
                         formula=line
-            formula=formula.replace('assign F = ', '')
+            formula=formula.replace('assign F0 = ', '')
 #            print(formula)
             for c in range(n):
                 formula=formula.replace(chr(97+c)+ ';', 'in'+str(n-c-1)+';')
@@ -323,6 +324,7 @@ def create_h(m, k, H, f1, modulename):
 
 
 def create_wh(n, m, k, W, H, fname, modulename, output_dir, abc, formula_file):
+    print(">>>>> create_wh")
     f1=open(fname+'_approx_k='+str(k)+'.v','w')
     f1.write('module ' +modulename+'(' + v2w_top('pi', n)+', '+ v2w_top('po', m)+');\n')
     f1.write('input '+v2w_top('pi', n)+';\n')
@@ -334,6 +336,7 @@ def create_wh(n, m, k, W, H, fname, modulename, output_dir, abc, formula_file):
     create_w(n, k, W, f1, modulename, formula_file, abc)
     create_h(m, k, H, f1, modulename)
     f1.close
+    print("<<<<< create_wh")
 
 def approximate(inputfile, k, worker, i, output_name=None):
 
@@ -481,6 +484,7 @@ def get_power(sta, script, liberty, input_file, modulename, output_file, delay):
 
 
 def create_wrapper(inp, out, top, vmap, worker):
+    print(">>> create_wrapper")
     tmp = os.path.join(worker.output, 'tmp.v')
     yosys_command = 'read_verilog ' + inp + '; synth -flatten; opt; opt_clean;  write_verilog ' + tmp + ';\n'
     subprocess.call([worker.path['yosys'], '-p', yosys_command], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
@@ -488,14 +492,23 @@ def create_wrapper(inp, out, top, vmap, worker):
     out_file = open(out, 'w')
 
     # Write module signature from tmp file
+    print("tmp:", tmp)
     tmp_file = open(tmp)
     isVector = {}
     line = tmp_file.readline()
+    
+    first_line = True
     while line:
         tokens = line.strip().strip(';').strip().split()
+        
 
-        if len(tokens) > 0 and tokens[0] == 'module':
+        if (len(tokens) > 0 and tokens[0] == 'module') or first_line:
             out_file.write(line)
+            # print(line)
+            if (line.find(';') > 0):
+                first_line = False
+            else:
+                first_line = True
 
         if len(tokens) > 0 and ( tokens[0] == 'input' or tokens[0] == 'output' ):
             out_file.write(line)
@@ -618,7 +631,7 @@ def create_wrapper(inp, out, top, vmap, worker):
 
 
 def create_wrapper_single(inp, out, worker):
-
+    print(">>>> create_wrapper_single")
     tmp = os.path.join(worker.output, 'tmp.v')
     yosys_command = 'read_verilog ' + inp + '; synth -flatten; opt; opt_clean; write_verilog ' + tmp + ';\n'
     subprocess.call([worker.path['yosys'], '-p', yosys_command], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
@@ -670,6 +683,7 @@ def create_wrapper_single(inp, out, worker):
 
     out_file.close()
     os.remove(tmp)
+    print("<<<< create_wrapper_single")
 
 
 
