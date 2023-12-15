@@ -52,26 +52,28 @@ def create_testbench(input_file, output_file, num, yosys):
         else:
             print('[Error] Port {} is not defined as input or output.'.format(i))
             sys.exit(0)
-    #count = 0
-    #for i in inp:
+            
+    # An alternative for above
+    # count = 0
+    # for i in inp:
     #    if not first:
     #        f.write(',')
     #    first = False
     #    if inp[i] > 1:
-    #        f.write(' .{}(pi[{}:{}]) '.format(i, count + inp[i] - 1, count))
+    #        f.write(' pi[{}:{}] '.format( count + inp[i] - 1, count))
     #    else:
-    #        f.write(' .{}(pi[{}]) '.format(i, count))
+    #        f.write(' pi[{}] '.format( count))
     #    count += inp[i]
 
-    #count = 0
-    #for i in out:
+    # count = 0
+    # for i in out:
     #    if not first:
     #        f.write(',')
     #    first = False
     #    if out[i] > 1:
-    #        f.write(' .{}(po[{}:{}]) '.format(i, count + out[i] - 1, count))
+    #        f.write(' po[{}:{}] '.format(count + out[i] - 1, count))
     #    else:
-    #        f.write(' .{}(po[{}]) '.format(i, count))
+    #        f.write(' po[{}] '.format(count))
     #    count += out[i]
 
 
@@ -86,7 +88,7 @@ def create_testbench(input_file, output_file, num, yosys):
             f.write('# 1  pi='+str(n_inputs)+'\'b')
             i=1
             while i <= n_inputs:
-                n=random.randint(0, 1)
+                n=random.randint(0, 1) # random
                 i+=1
                 f.write(str(n))
             f.write(';\n')
@@ -119,14 +121,25 @@ def module_info(fname, yosys_path):
     out_count = 0
     modulename = None
     line = tmp_file.readline()
+    port_list = []
+    port_done = False
     while line:
         tokens = re.split('[ ()]', line.strip().strip(';').strip())
          
-        if len(tokens) > 0 and tokens[0] == 'module' and modulename is None:
+        if len(tokens) > 0 and tokens[0] == 'module' and modulename is None and port_done is False:
             modulename = tokens[1]
             port_list = re.split('[,()]', line.strip().strip(';').strip())[1:]
             port_list = [s.strip() for s in port_list if s.strip() != '']
 
+        elif port_done is False:
+            new_port_list = re.split('[,);]', line.strip())
+            new_port_list = [s.strip() for s in new_port_list if s.strip() != '']
+            # print(new_port_list)
+            for p in new_port_list:
+                port_list.append(p)
+                
+        if ';' in line:
+            port_done = True
 
 
         if len(tokens) == 2 and ( tokens[0] == 'input' or tokens[0] == 'output' ):
