@@ -192,6 +192,8 @@ class GreedyWorker():
 
     def evaluate_initial(self):
         print('Simulating truth table on input design...')
+        print(self.input)
+        print(self.testbench)
         subprocess.call([self.path['iverilog'], '-o', self.modulename+'.iv', self.input, self.testbench ])
         output_truth = os.path.join(self.output, self.modulename+'.truth')
         with open(output_truth, 'w') as f:
@@ -231,10 +233,12 @@ class GreedyWorker():
             num_parts = number_of_cell(self.input, self.path['yosys']) // 30 + 1
 
         print('Partitioning input circuit...')
+        print(self.path['part_config'])
         part_dir = os.path.join(self.output, 'partition')
+        print(part_dir)
         lsoracle_command = 'read_aig ' + self.aig + '; ' \
-                'partitioning ' + str(num_parts) + ' -c '+ self.path['part_config'] +'; ' \
-                'get_all_partitions ' + part_dir
+                'partitioning ' + str(num_parts) + '; ' \
+                'get_all_partitions ' + part_dir +'; '
         
         log_partition = os.path.join(self.output, 'log', 'lsoracle.log')
         with open(log_partition, 'w') as file_handler:
@@ -253,7 +257,7 @@ class GreedyWorker():
             inp, out = inpout(mod_path)
             if inp > 16:
                 lsoracle_command = 'read_verilog ' + mod_path + '; ' \
-                        'partitioning 3 -c ' + self.path['part_config'] + '; ' \
+                        'partitioning 3; ' \
                         'get_all_partitions ' + part_dir
                 with open(log_partition, 'a') as file_handler:
                     subprocess.call([self.path['lsoracle'], '-c', lsoracle_command], stderr=subprocess.STDOUT, stdout=file_handler)
@@ -396,7 +400,7 @@ class GreedyWorker():
 
 
         time_used = after - before
-        print('--------------- Finishing Iteration' + str(self.iter) + '---------------')
+        print('--------------- Finishing Iteration ' + str(self.iter) + '---------------')
         part_idx = list(np.nonzero(np.subtract(next_stream, self.curr_stream)))
         print('Partition', part_idx, 'being approximated')
 

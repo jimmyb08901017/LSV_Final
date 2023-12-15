@@ -20,11 +20,13 @@ def recursive_partitioning(inp_file, out_dir, modulename, path):
 
     modulenames = []
 
-    print('Partitioning input circuit...')
+    print('Partitioning input circuit 1...')
+    print(inp_file)
     part_dir = os.path.join(out_dir, 'partition')
     num_parts = number_of_cell(inp_file, path['yosys']) // 1500 + 1
+    print(num_parts)
     lsoracle_command = 'read_verilog ' + inp_file + '; ' \
-            'partitioning ' + str(num_parts) + ' -c '+ path['part_config'] +'; ' \
+            'oracle ' + str(num_parts) + ' -c '+ path['part_config'] +'; ' \
             'get_all_partitions ' + part_dir
     
     log_partition = os.path.join(out_dir, 'lsoracle.log')
