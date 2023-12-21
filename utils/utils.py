@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import time
 from .ASSO.BMF import BMF
+from .BANMF.BANMF import BANMF
 
 class CombinationalLoop(Exception):
     pass
@@ -344,7 +345,8 @@ def approximate(inputfile, k, worker, i, output_name=None):
     if output_name is None:
         output_name = modulename
 
-    BMF( inputfile+'.truth', k, True)
+    # BMF( inputfile+'.truth', k, True)
+    BANMF( inputfile+'.truth', k, True)
     W = np.loadtxt(inputfile + '.truth_w_' + str(k), dtype=int)
     H = np.loadtxt(inputfile + '.truth_h_' + str(k), dtype=int)
     formula_file = os.path.join(worker.output, 'bmf_partition', modulename, modulename+'_formula.v')
