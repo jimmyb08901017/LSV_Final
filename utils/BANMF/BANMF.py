@@ -4,12 +4,11 @@ import os
 import shutil
 from .utils import *
 
-
 ### 
 # The part to change :
 # ./utils/utils.py:348
 ### 
-def BANMF(truthtable, k, binary = False):
+def BANMF(truthtable, k, binary = True, regularized=False):
     # Read in input truthtable
     input_truth = get_matrix(truthtable)
     row, col = input_truth.shape
@@ -53,11 +52,13 @@ def BANMF(truthtable, k, binary = False):
     N_iter = 3
     
     ### Algorithm 1: BANMF algorithm ###
-    Y, W, H = BANMF_algo(k, Y, W, H, N_iter)
+    if not regularized: 
+        Y, W, H = BANMF_algo(k, Y, W, H, N_iter)
     
     ### Algorithm 3: RegularizedBANMF algorithm ###
-    # reg_lambda = 0.1 # for regularized BANMF
-    # Y, W, H = regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda)
+    if regularized:
+        reg_lambda = 0.1 # for regularized BANMF
+        Y, W, H = regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda)
         
     print(">>> after <<<")
     print("W:")

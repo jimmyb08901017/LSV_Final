@@ -1,5 +1,9 @@
 import numpy as np
 
+def divide(a, b):
+    c = np.divide( a, b, out=np.zeros(np.shape(a)), where=b!=0)
+    return c
+
 ### Algorithm 1: BANMF algorithm ###
 def BANMF_algo(k, Y, W, H, N_iter):    
     for i in range(N_iter):
@@ -8,32 +12,36 @@ def BANMF_algo(k, Y, W, H, N_iter):
         # Update W
         WH = np.matmul(W, H)
         H_t = H.transpose()
-        W_new = W * np.matmul(Y, H_t)
-        W_new = W_new / np.matmul(WH, H_t)
+        W = W * np.matmul(Y, H_t)
+        divider = np.matmul(WH, H_t)
+        W = divide(W, divider)
+        # W_new = W_new / np.matmul(WH, H_t)
         
         # Update H
         WH = np.matmul(W, H)
         W_t = W.transpose()
-        H_new = H * np.matmul(W_t, Y) 
-        H_new = H_new / np.matmul(W_t, WH)
+        H = H * np.matmul(W_t, Y) 
+        divider = np.matmul(W_t, WH)
+        H = divide(H, divider)
+        #H_new = H_new / np.matmul(W_t, WH)
         
         # Update Y
-        WH = np.matmul(W_new, H_new)
+        WH = np.matmul(W, H)
         # mask_WH = WH*input_truth
         Y = np.where( WH > 1 , WH, 1)
         Y = np.where(Y > k , k, Y)
         # Y = np.where( input_truth == 0, Y, 0)
-        W = W_new
-        H = H_new
+        # W = W_new
+        # H = H_new
         
-        print("W:")
-        print(W)
-        print("H:")
-        print(H)
-        print("WH:")
-        print(WH)
-        print("Y:")
-        print(Y)
+        # print("W:")
+        # print(W)
+        # print("H:")
+        # print(H)
+        # print("WH:")
+        # print(WH)
+        # print("Y:")
+        # print(Y)
         dist = np.linalg.norm(Y - WH, ord='fro')
         print("dist:", dist)
         if dist == 0:
@@ -52,7 +60,8 @@ def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
         W2 = W*W
         W3 = W2*W
         W = W * (np.matmul(Y, H_t) + 3*reg_lambda*W2)
-        W = W / (np.matmul(WH, H_t) + 2*reg_lambda*W3 + reg_lambda*W2)
+        divider = np.matmul(WH, H_t) + 2*reg_lambda*W3 + reg_lambda*W2
+        W = divide(W, divider)
         
         # Update H
         H2 = H*H
@@ -60,7 +69,9 @@ def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
         WH = np.matmul(W, H)
         W_t = W.transpose()
         H = H * (np.matmul(W_t, Y) + 3*reg_lambda*H2)
-        H = H / (np.matmul(W_t, WH) + 2*reg_lambda*H3 + reg_lambda*H2)
+        divider = np.matmul(W_t, WH) + 2*reg_lambda*H3 + reg_lambda*H2
+        H = divide(H, divider)
+        
         
         # Update Y
         WH = np.matmul(W, H)
@@ -79,6 +90,7 @@ def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
         print("dist:", dist)
         if dist == 0:
             break
+    return Y, W, H
         
 ## Algorithm 2: Booleanization ##
 def booleanization(X, W, H):
@@ -92,9 +104,9 @@ def booleanization(X, W, H):
     min_distance = 10000
     
     for delta_w in delta_W_candidiate: # grid search
-        W_head = np.where(W > delta_w , 1, 0)
+        W_head = np.where(W >= delta_w , 1, 0)
         for delta_h in delta_H_candidiate:
-            H_head = np.where(H > delta_h, 1, 0)
+            H_head = np.where(H >= delta_h, 1, 0)
             
             # calculate | X - W^H^|
             W_hH_h = np.matmul(W_head, H_head) % 2
