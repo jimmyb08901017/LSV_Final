@@ -51,46 +51,56 @@ def BANMF_algo(k, Y, W, H, N_iter):
 
 ### Algorithm 3: RegularizedBANMF algorithm ###
 def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
-    for i in range(N_iter):
-        print(f">>> iteration {i} <<<")
-        
-        # Update W
-        WH = np.matmul(W, H)
-        H_t = H.transpose()
-        W2 = W*W
-        W3 = W2*W
-        W = W * (np.matmul(Y, H_t) + 3*reg_lambda*W2)
-        divider = np.matmul(WH, H_t) + 2*reg_lambda*W3 + reg_lambda*W2
-        W = divide(W, divider)
-        
-        # Update H
-        H2 = H*H
-        H3 = H2*H
-        WH = np.matmul(W, H)
-        W_t = W.transpose()
-        H = H * (np.matmul(W_t, Y) + 3*reg_lambda*H2)
-        divider = np.matmul(W_t, WH) + 2*reg_lambda*H3 + reg_lambda*H2
-        H = divide(H, divider)
-        
-        
-        # Update Y
-        WH = np.matmul(W, H)
-        Y = np.where( WH > 1 , WH, 1)
-        Y = np.where(Y > k , k, Y)
-        
-        # print("W:")
-        # print(W)
-        # print("H:")
-        # print(H)
-        # print("WH:")
-        # print(WH)
-        # print("Y:")
-        # print(Y)
-        dist = np.linalg.norm(Y - WH, ord='fro')
-        print("dist:", dist)
-        if dist == 0:
-            break
-    return Y, W, H
+    for round in range(600):
+        best_W = np.ones(1)
+        best_Y = np.ones(1)
+        best_H = np.ones(1)
+        best_dist = 100000000
+        for i in range(N_iter):
+            # print(f">>> iteration {i} <<<")
+            
+            # Update W
+            WH = np.matmul(W, H)
+            H_t = H.transpose()
+            W2 = W*W
+            W3 = W2*W
+            W = W * (np.matmul(Y, H_t) + 3*reg_lambda*W2)
+            divider = np.matmul(WH, H_t) + 2*reg_lambda*W3 + reg_lambda*W2
+            W = divide(W, divider)
+            
+            # Update H
+            H2 = H*H
+            H3 = H2*H
+            WH = np.matmul(W, H)
+            W_t = W.transpose()
+            H = H * (np.matmul(W_t, Y) + 3*reg_lambda*H2)
+            divider = np.matmul(W_t, WH) + 2*reg_lambda*H3 + reg_lambda*H2
+            H = divide(H, divider)
+            
+            
+            # Update Y
+            WH = np.matmul(W, H)
+            Y = np.where( WH > 1 , WH, 1)
+            Y = np.where(Y > k , k, Y)
+            
+            # print("W:")
+            # print(W)
+            # print("H:")
+            # print(H)
+            # print("WH:")
+            # print(WH)
+            # print("Y:")
+            # print(Y)
+            #dist = np.linalg.norm(Y - WH, ord='fro')
+            dist = weighted_HD(Y, WH)
+            # print("dist:", dist)
+            if dist == 0:
+                break
+        if dist < best_dist:
+            best_Y = Y
+            best_W = W
+            best_H = H
+    return best_Y, best_W, best_H
         
 ## Algorithm 2: Booleanization ##
 def booleanization(X, W, H):
@@ -111,6 +121,7 @@ def booleanization(X, W, H):
             # calculate | X - W^H^|
             W_hH_h = np.matmul(W_head, H_head) % 2
             norm = np.linalg.norm(X - W_hH_h, ord='fro') # calculate distance
+            # norm = weighted_HD(X, W_hH_h)
             if norm < min_distance:
                 min_distance = norm
                 best_W_head = W_head
