@@ -1,57 +1,67 @@
 import numpy as np
+import sys
 
 def divide(a, b):
-    c = np.divide( a, b, out=np.zeros(np.shape(a)), where=b!=0)
+    c = np.divide( a, b, out=sys.maxsize*np.ones(np.shape(a)), where=b!=0)
+    # c = a / b
     return c
 
 ### Algorithm 1: BANMF algorithm ###
-def BANMF_algo(k, Y, W, H, N_iter):    
-    for i in range(N_iter):
-        print(f">>> iteration {i} <<<")
-        
-        # Update W
-        WH = np.matmul(W, H)
-        H_t = H.transpose()
-        W = W * np.matmul(Y, H_t)
-        divider = np.matmul(WH, H_t)
-        W = divide(W, divider)
-        # W_new = W_new / np.matmul(WH, H_t)
-        
-        # Update H
-        WH = np.matmul(W, H)
-        W_t = W.transpose()
-        H = H * np.matmul(W_t, Y) 
-        divider = np.matmul(W_t, WH)
-        H = divide(H, divider)
-        #H_new = H_new / np.matmul(W_t, WH)
-        
-        # Update Y
-        WH = np.matmul(W, H)
-        # mask_WH = WH*input_truth
-        Y = np.where( WH > 1 , WH, 1)
-        Y = np.where(Y > k , k, Y)
-        # Y = np.where( input_truth == 0, Y, 0)
-        # W = W_new
-        # H = H_new
-        
-        # print("W:")
-        # print(W)
-        # print("H:")
-        # print(H)
-        # print("WH:")
-        # print(WH)
-        # print("Y:")
-        # print(Y)
-        dist = np.linalg.norm(Y - WH, ord='fro')
-        print("dist:", dist)
-        if dist == 0:
-            break
-    
-    return Y, W, H
+def BANMF_algo(k, X, Y, W, H, N_iter):
+    for round in range(600):
+        best_W = np.ones(1)
+        best_Y = np.ones(1)
+        best_H = np.ones(1)
+        best_dist = 100000000    
+        for i in range(N_iter):
+            print(f">>> iteration {i} <<<")
+            
+            # Update W
+            WH = np.matmul(W, H)
+            H_t = H.transpose()
+            W = W * np.matmul(Y, H_t)
+            divider = np.matmul(WH, H_t)
+            W = divide(W, divider)
+            # W_new = W_new / np.matmul(WH, H_t)
+            
+            # Update H
+            WH = np.matmul(W, H)
+            W_t = W.transpose()
+            H = H * np.matmul(W_t, Y) 
+            divider = np.matmul(W_t, WH)
+            H = divide(H, divider)
+            #H_new = H_new / np.matmul(W_t, WH)
+            
+            # Update Y
+            WH = np.matmul(W, H)
+            Y = np.where( WH > 1 , WH, 1)
+            Y = np.where( Y > k , k, Y)
+            Y = np.where( X == 0, 0, Y)
+            # Y = np.where( input_truth == 0, Y, 0)
+            # W = W_new
+            # H = H_new
+            
+            # print("W:")
+            # print(W)
+            # print("H:")
+            # print(H)
+            # print("WH:")
+            # print(WH)
+            # print("Y:")
+            # print(Y)
+            dist = np.linalg.norm(Y - WH, ord='fro')
+            print("dist:", dist)
+            if dist == 0:
+                break
+            if dist < best_dist:
+                best_Y = Y
+                best_W = W
+                best_H = H
+    return best_Y, best_W, best_H
 
 ### Algorithm 3: RegularizedBANMF algorithm ###
-def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
-    for round in range(600):
+def regularized_BANMF_algo(k, X, Y, W, H, N_iter, reg_lambda):
+    for round in range(100):
         best_W = np.ones(1)
         best_Y = np.ones(1)
         best_H = np.ones(1)
@@ -82,6 +92,7 @@ def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
             WH = np.matmul(W, H)
             Y = np.where( WH > 1 , WH, 1)
             Y = np.where(Y > k , k, Y)
+            Y = np.where( X == 0, 0, Y)
             
             # print("W:")
             # print(W)
@@ -104,8 +115,17 @@ def regularized_BANMF_algo(k, Y, W, H, N_iter, reg_lambda):
         
 ## Algorithm 2: Booleanization ##
 def booleanization(X, W, H):
-    delta_W_candidiate = np.linspace(start=W.min(), stop=W.max(), num=100, endpoint=True)
-    delta_H_candidiate = np.linspace(start=H.min(), stop=H.max(), num=100, endpoint=True)
+    minW = np.min(W[np.nonzero(W)])
+    maxW = np.nanmax(W)
+    maxW = np.max(W[W<100])
+    minH = np.min(H[np.nonzero(H)])
+    maxH = np.nanmax(H)
+    maxH = np.max(H[H<100])
+    # print(minW, maxW, minH, maxH)
+    assert maxW == maxW
+    assert maxH == maxH
+    delta_W_candidiate = np.linspace(start=minW, stop=maxW, num=300, endpoint=True)
+    delta_H_candidiate = np.linspace(start=minH, stop=maxH, num=300, endpoint=True)
     
     best_W_head = []
     best_H_head = []
@@ -115,8 +135,11 @@ def booleanization(X, W, H):
     
     for delta_w in delta_W_candidiate: # grid search
         W_head = np.where(W >= delta_w , 1, 0)
+        # W_head = np.where(W_head == np.nan, 1, 0)
         for delta_h in delta_H_candidiate:
             H_head = np.where(H >= delta_h, 1, 0)
+            # H_head = np.where(H_head == np.nan, 1, 0)
+            
             
             # calculate | X - W^H^|
             W_hH_h = np.matmul(W_head, H_head) % 2
