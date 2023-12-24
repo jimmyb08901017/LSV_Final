@@ -346,7 +346,7 @@ def approximate(inputfile, k, worker, i, output_name=None):
         output_name = modulename
 
     # BMF( inputfile+'.truth', k, True)
-    BANMF( inputfile+'.truth', k, True, regularized=True)
+    BANMF( inputfile+'.truth', k, True, regularized=False)
     W = np.loadtxt(inputfile + '.truth_w_' + str(k), dtype=int)
     H = np.loadtxt(inputfile + '.truth_h_' + str(k), dtype=int)
     formula_file = os.path.join(worker.output, 'bmf_partition', modulename, modulename+'_formula.v')
