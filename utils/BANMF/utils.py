@@ -1,20 +1,19 @@
 import numpy as np
 import sys
 
-def divide(a, b):
+def divide(a, b): # c = a / b
     c = np.divide( a, b, out=sys.maxsize*np.ones(np.shape(a)), where=b!=0)
-    # c = a / b
     return c
 
 ### Algorithm 1: BANMF algorithm ###
-def BANMF_algo(k, X, Y, W, H, N_iter):
-    for round in range(600):
+def BANMF_algo(k, X, Y, W, H, N_iter, N_sample):
+    for round in range(N_sample):
         best_W = np.ones(1)
         best_Y = np.ones(1)
         best_H = np.ones(1)
         best_dist = 100000000    
         for i in range(N_iter):
-            print(f">>> iteration {i} <<<")
+            # print(f">>> iteration {i} <<<")
             
             # Update W
             WH = np.matmul(W, H)
@@ -41,16 +40,9 @@ def BANMF_algo(k, X, Y, W, H, N_iter):
             # W = W_new
             # H = H_new
             
-            # print("W:")
-            # print(W)
-            # print("H:")
-            # print(H)
-            # print("WH:")
-            # print(WH)
-            # print("Y:")
-            # print(Y)
-            dist = np.linalg.norm(Y - WH, ord='fro')
-            print("dist:", dist)
+            # dist = np.linalg.norm(Y - WH, ord='fro')
+            dist = weighted_HD(Y, WH)
+            # print("dist:", dist)
             if dist == 0:
                 break
             if dist < best_dist:
@@ -60,8 +52,9 @@ def BANMF_algo(k, X, Y, W, H, N_iter):
     return best_Y, best_W, best_H
 
 ### Algorithm 3: RegularizedBANMF algorithm ###
-def regularized_BANMF_algo(k, X, Y, W, H, N_iter, reg_lambda):
-    for round in range(100):
+def regularized_BANMF_algo(k, X, Y, W, H, N_iter, N_sample, reg_lambda):
+    for round in range(N_sample):
+        
         best_W = np.ones(1)
         best_Y = np.ones(1)
         best_H = np.ones(1)

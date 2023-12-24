@@ -8,7 +8,7 @@ from .utils import *
 # The part to change :
 # ./utils/utils.py:348
 ### 
-def BANMF(truthtable, k, binary = True, regularized=False):
+def BANMF(truthtable, k, binary = True, regularized=True):
     # Read in input truthtable
     input_truth = get_matrix(truthtable)
     row, col = input_truth.shape
@@ -54,13 +54,13 @@ def BANMF(truthtable, k, binary = True, regularized=False):
     N_iter = 5
     
     ### Algorithm 1: BANMF algorithm ###
-    if not regularized: 
-        Y, W, H = BANMF_algo(k, input_truth, Y, W, H, N_iter)
+    if not regularized:
+        Y, W, H = BANMF_algo(k, input_truth, Y, W, H, N_iter, 100)
     
     ### Algorithm 3: RegularizedBANMF algorithm ###
     if regularized:
         reg_lambda = 0.1 # for regularized BANMF
-        Y, W, H = regularized_BANMF_algo(k, input_truth, Y, W, H, N_iter, reg_lambda)
+        Y, W, H = regularized_BANMF_algo(k, input_truth, Y, W, H, N_iter, 100, reg_lambda)
         
     # print(">>> after <<<")
     # print("W:")

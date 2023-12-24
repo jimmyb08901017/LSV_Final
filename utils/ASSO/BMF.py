@@ -65,5 +65,6 @@ def BMF(truthtable, k, binary = False):
     write_matrix(best_B, B_path)
     write_matrix(best_S, S_path)
     new_best_result = np.matmul(best_S, best_B)
+    # print("BMF HD:",HD(input_truth,new_best_result ))
     new_best_result = new_best_result % 2
     write_matrix(new_best_result, mult_path)

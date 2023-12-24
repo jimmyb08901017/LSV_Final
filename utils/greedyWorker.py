@@ -212,7 +212,7 @@ class GreedyWorker():
     def partitioning(self, num_parts):
 
         # Partitioning circuit
-        print('Partitioning input circuit...')
+        print('Partitioning input circuit...(1)')
         part_dir = os.path.join(self.output, 'partition')
         lsoracle_command = 'read_aig ' + self.aig + '; ' \
                 'partitioning ' + str(num_parts) + ' -c '+ self.path['part_config'] +'; ' \
@@ -232,7 +232,8 @@ class GreedyWorker():
         if num_parts is None:
             num_parts = number_of_cell(self.input, self.path['yosys']) // 30 + 1
 
-        print('Partitioning input circuit...')
+        print('Partitioning input circuit...(2)')
+        print(num_parts)
         print(self.path['part_config'])
         part_dir = os.path.join(self.output, 'partition')
         print(part_dir)
@@ -256,6 +257,7 @@ class GreedyWorker():
 
             inp, out = inpout(mod_path)
             if inp > 16:
+                print("partition (3)")
                 lsoracle_command = 'read_verilog ' + mod_path + '; ' \
                         'partitioning 3; ' \
                         'get_all_partitions ' + part_dir
@@ -533,7 +535,6 @@ class GreedyWorker():
 
                 if num_iter == 0:
                     self.first_iter_err = {part_num:err_num for part_num, err_num in zip(changed, err_list)}
-            
             # Random Accelerate mode
             elif accel == 1:
                 random.shuffle(k_lists_tmp)

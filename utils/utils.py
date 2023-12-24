@@ -16,7 +16,7 @@ class NoValidDesign(Exception):
 
 
 def evaluate_design(k_stream, worker, filename, display=True):
-    print('>>> Evaluating Design')
+    print('>>> Evaluating Design', k_stream)
     verilog_list = [os.path.join(worker.output, 'partition', worker.modulename + '.v')]
 
     # Parse each subcircuit
@@ -72,7 +72,7 @@ def evaluate_design(k_stream, worker, filename, display=True):
         power = float('nan')
         print('Simulation error: {:.6f}\tCircuit area: {:.6f}'.format(err, area))
 
-    print('<<< Evaluating Design:', k_stream)
+    # print('<<< Evaluating Design:', k_stream)
     return err, area, delay, power
 
 
@@ -120,7 +120,7 @@ def synth_design(input_file, output_file, lib_file, script, yosys):
                 area = return_list[-1]
 
     os.remove(output_file+'.log')
-    print("<<< synth_design")
+    # print("<<< synth_design")
     return float(area)
 
 def inpout(fname):
@@ -337,7 +337,7 @@ def create_wh(n, m, k, W, H, fname, modulename, output_dir, abc, formula_file):
     create_w(n, k, W, f1, modulename, formula_file, abc)
     create_h(m, k, H, f1, modulename)
     f1.close
-    print("<<<<< create_wh")
+    # print("<<<<< create_wh")
 
 def approximate(inputfile, k, worker, i, output_name=None):
 
@@ -345,8 +345,8 @@ def approximate(inputfile, k, worker, i, output_name=None):
     if output_name is None:
         output_name = modulename
 
-    # BMF( inputfile+'.truth', k, True)
-    BANMF( inputfile+'.truth', k, True, regularized=False)
+    #BMF( inputfile+'.truth', k, True)
+    BANMF( inputfile+'.truth', k, True, regularized=True)
     W = np.loadtxt(inputfile + '.truth_w_' + str(k), dtype=int)
     H = np.loadtxt(inputfile + '.truth_h_' + str(k), dtype=int)
     formula_file = os.path.join(worker.output, 'bmf_partition', modulename, modulename+'_formula.v')
@@ -685,7 +685,7 @@ def create_wrapper_single(inp, out, worker):
 
     out_file.close()
     os.remove(tmp)
-    print("<<<< create_wrapper_single")
+    # print("<<<< create_wrapper_single")
 
 
 
