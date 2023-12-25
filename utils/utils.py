@@ -35,7 +35,7 @@ def evaluate_design(k_stream, worker, filename, display=True):
             print('----- Approximating part ' + str(i) + ' to degree ' + str(approx_degree))
 
             directory = os.path.join(worker.output, 'bmf_partition', modulename, modulename)
-            approximate(directory, approx_degree, worker, i)
+            approximate(directory, approx_degree, worker, i) # some problem here
         
         verilog_list.append(part_verilog)
     
@@ -346,7 +346,7 @@ def approximate(inputfile, k, worker, i, output_name=None):
         output_name = modulename
 
     #BMF( inputfile+'.truth', k, True)
-    BANMF( inputfile+'.truth', k, True, regularized=True)
+    BANMF( inputfile+'.truth', k, True, regularized=False, ASSO=True)
     W = np.loadtxt(inputfile + '.truth_w_' + str(k), dtype=int)
     H = np.loadtxt(inputfile + '.truth_h_' + str(k), dtype=int)
     formula_file = os.path.join(worker.output, 'bmf_partition', modulename, modulename+'_formula.v')

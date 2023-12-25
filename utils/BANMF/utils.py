@@ -45,10 +45,10 @@ def BANMF_algo(k, X, Y, W, H, N_iter, N_sample):
             # print("dist:", dist)
             if dist == 0:
                 break
-            if dist < best_dist:
-                best_Y = Y
-                best_W = W
-                best_H = H
+        if dist < best_dist:
+            best_Y = Y
+            best_W = W
+            best_H = H
     return best_Y, best_W, best_H
 
 ### Algorithm 3: RegularizedBANMF algorithm ###
@@ -110,15 +110,15 @@ def regularized_BANMF_algo(k, X, Y, W, H, N_iter, N_sample, reg_lambda):
 def booleanization(X, W, H):
     minW = np.min(W[np.nonzero(W)])
     maxW = np.nanmax(W)
-    maxW = np.max(W[W<100])
+    maxW = np.max(W)
     minH = np.min(H[np.nonzero(H)])
     maxH = np.nanmax(H)
-    maxH = np.max(H[H<100])
+    maxH = np.max(H)
     # print(minW, maxW, minH, maxH)
     assert maxW == maxW
     assert maxH == maxH
-    delta_W_candidiate = np.linspace(start=minW, stop=maxW, num=300, endpoint=True)
-    delta_H_candidiate = np.linspace(start=minH, stop=maxH, num=300, endpoint=True)
+    delta_W_candidiate = np.linspace(start=minW, stop=maxW, num=150, endpoint=True)
+    delta_H_candidiate = np.linspace(start=minH, stop=maxH, num=150, endpoint=True)
     
     best_W_head = []
     best_H_head = []
@@ -147,7 +147,58 @@ def booleanization(X, W, H):
                 
     return best_W_head, best_H_head, best_delta_W, best_delta_H, min_distance
 
+def ASSO (input_truth):
+    row, col = input_truth.shape
 
+    # Best pair
+    best_B = -1
+    best_S = -1
+    best_result = -1
+    best_score = float('inf')
+
+    threshold_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    
+    ### ASSO algorithm ###
+    for threshold in threshold_list:
+        association = calculate_association(input_truth, threshold) # A
+        S, B, result = solve_basis(input_truth, k, association, 1, -1, binary)
+        if binary:
+            score = weighted_HD(input_truth, result) # This is the new part proposed in BLASYS 3.2
+        else:
+            score = HD(input_truth, result)
+
+        if score < best_score:
+            best_B = B
+            best_S = S
+            best_result = result
+            best_score = score
+    
+    ### Exhastive search on B ### 
+    # Wait... why not search on S as ASSO proposed?
+    # Enumerate possible columns
+    column_list = []
+    multi_list = []
+    for i in range(2**k):
+        binary_str = '{0:0>{1}}'.format(bin(i)[2:], k)
+        column = np.array(list(binary_str)).astype(np.uint8)
+        column_list.append(column)
+        prod = np.matmul(best_S, column)
+        prod = prod % 2
+        multi_list.append(prod)
+    
+    # Brute force best column in B
+    for i in range(col):
+        ground_truth = input_truth[:, i]
+        best_similar = 0
+        best_idx = -1
+        for j in range(2**k):
+            similar = sum(multi_list[j] == ground_truth)
+            if similar > best_similar:
+                best_idx = j
+                best_similar = similar
+        best_B[:, i] = column_list[best_idx]
+        
+    return best_S, best_B
 def get_matrix(file_path):
     with open(file_path) as f:
         lines = f.readlines()
@@ -165,6 +216,8 @@ def write_matrix(mat, file_path):
 
 def HD(org, app):
     assert org.shape == app.shape
+    if app.shape == 1:
+        return 
     return np.sum(org != app)
 
 
