@@ -4,6 +4,83 @@ import sys
 def divide(a, b): # c = a / b
     c = np.divide( a, b, out=sys.maxsize*np.ones(np.shape(a)), where=b!=0)
     return c
+# Compute association matrix
+def calculate_association(matrix, threshold=0.5):
+    row, col = matrix.shape
+    ASSO = np.zeros((col, col))
+    for i in range(col):
+        idx = (matrix[:, i] == 1)
+        for j in range(col):
+            ASSO[i, j] = sum(matrix[:, j][idx])
+        if ASSO[i, i] != 0:
+            ASSO[i, :] = ASSO[i, :] / ASSO[i, i]
+    
+    ASSO[ASSO >= threshold] = 1
+    ASSO[ASSO < threshold] = 0
+
+    return ASSO.astype(np.uint8)
+
+
+def solve_basis(matrix, k, asso, bonus, penalty, binary=False):
+
+    row, col = matrix.shape
+
+    # Mark whether an entry is already covered
+    covered = np.zeros((row, col)).astype(np.uint8)
+
+    # Coefficient matrix for bonux or penalty
+    coef = np.zeros(matrix.shape)
+    coef[matrix == 0] = penalty
+    coef[matrix == 1] = bonus
+
+    # If in binary mode, make coef exponential
+    if binary:
+        coef *= np.array([2**e for e in range(col-1, -1, -1)])
+
+    for i in range(k):
+
+        best_basis = np.zeros((1, col)).astype(np.uint8)
+        best_solver = np.zeros((row, 1)).astype(np.uint8)
+        best_score = 0
+
+        for b in range(col):
+            # Candidate pair of basis and solver
+            basis = asso[b, :]
+            solver = np.zeros((row, 1)).astype(np.uint8)
+            
+            # Compute score for each row
+            not_covered = 1 - covered
+            score_matrix = coef * not_covered * basis
+            score_per_row = np.sum(score_matrix, axis=1)
+
+            # Compute solver
+            solver[score_per_row > 0] = 1
+
+            # Compute accumulate point
+            score = np.sum(score_per_row[score_per_row > 0])
+
+            if score > best_score:
+                best_basis = basis
+                best_solver = solver
+                best_score = score
+        
+        # Stack matrix B and S
+        if i == 0:
+            B = best_basis.reshape((1, -1))
+            S = best_solver.copy()
+        else:
+            B = np.vstack((B, best_basis))
+            S = np.hstack((S, best_solver))
+        
+        # Update covered matrix
+        covered = np.matmul(S, B)
+        covered[covered > 1] = 1
+    
+    return S, B, covered
+
+
+
+
 
 ### Algorithm 1: BANMF algorithm ###
 def BANMF_algo(k, X, Y, W, H, N_iter, N_sample):
@@ -136,8 +213,8 @@ def booleanization(X, W, H):
             
             # calculate | X - W^H^|
             W_hH_h = np.matmul(W_head, H_head) % 2
-            norm = np.linalg.norm(X - W_hH_h, ord='fro') # calculate distance
-            # norm = weighted_HD(X, W_hH_h)
+            # norm = np.linalg.norm(X - W_hH_h, ord='fro') # calculate distance
+            norm = weighted_HD(X, W_hH_h)
             if norm < min_distance:
                 min_distance = norm
                 best_W_head = W_head
@@ -147,7 +224,7 @@ def booleanization(X, W, H):
                 
     return best_W_head, best_H_head, best_delta_W, best_delta_H, min_distance
 
-def ASSO (input_truth):
+def ASSO_algo (input_truth, k):
     row, col = input_truth.shape
 
     # Best pair
@@ -161,8 +238,8 @@ def ASSO (input_truth):
     ### ASSO algorithm ###
     for threshold in threshold_list:
         association = calculate_association(input_truth, threshold) # A
-        S, B, result = solve_basis(input_truth, k, association, 1, -1, binary)
-        if binary:
+        S, B, result = solve_basis(input_truth, k, association, 1, -1, True)
+        if True:
             score = weighted_HD(input_truth, result) # This is the new part proposed in BLASYS 3.2
         else:
             score = HD(input_truth, result)
@@ -199,6 +276,8 @@ def ASSO (input_truth):
         best_B[:, i] = column_list[best_idx]
         
     return best_S, best_B
+
+
 def get_matrix(file_path):
     with open(file_path) as f:
         lines = f.readlines()

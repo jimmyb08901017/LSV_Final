@@ -31,14 +31,14 @@ def BANMF(truthtable, k, binary = True, regularized=True, ASSO=False):
     # Initialize W, H, Y
     # [Note] Y, W, and H are not necessarily boolean matrix!    
     # We will convert W and H to boolean matrix in algo-2. 
-    W = np.random.rand(row, k) # ! Entries in W & H are now [0, 1),
-    H = np.random.rand(k, col) #   may be a problem. 
+    W = 1 - np.random.rand(row, k) # ! Entries in W & H are now [0, 1),
+    H = 1 - np.random.rand(k, col) #   may be a problem. 
     Y = input_truth            ##  auxiliary matrix
     
     if ASSO:
-        S, B = ASSO(input_truth)
-        W = W + S
-        H = H + B
+        S, B = ASSO_algo(input_truth, k)
+        W = S*0.8 + 0.1
+        H = B*0.8 + 0.1
     
     ##  Several usages of numpy ## 
     # test1 = np.matmul(W, H) # mul
@@ -48,7 +48,7 @@ def BANMF(truthtable, k, binary = True, regularized=True, ASSO=False):
     
     
     # Number of iteration
-    N_iter = 5 # Don't edit(?) # In paper, they propose 500, but that really takes toooo long....
+    N_iter = 50 # Don't edit(?) # In paper, they propose 500, but that really takes toooo long....
     
     # Sample
     Sample = 50 # 300
